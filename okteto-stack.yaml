@@ -1,0 +1,8 @@
+services:
+  fastapi:
+    public: true
+    image: okteto/hello-world:python
+    build: .
+    replicas: 1
+    ports:
+      - 5000

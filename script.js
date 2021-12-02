@@ -1,26 +1,50 @@
 // 1). grab needed elements' reference
 // #video element
 const video = document.getElementById('video');
-var buttonRecord = document.getElementById("btn_start");
-var div = document.getElementById("div_img");
-var cdown = document.getElementById("count_down");
-var count_img = document.getElementById("counts");
-var upload = document.getElementById("btn_upload");
-var delall = document.getElementById("btn_delall");
+const buttonRecord = document.getElementById("btn_start");
+const div = document.getElementById("div_img");
+const cdown = document.getElementById("count_down");
+const count_img = document.getElementById("counts");
+const upload = document.getElementById("btn_upload");
+const delall = document.getElementById("btn_delall");
+const progress = document.getElementById("progress_line");
+const progress_bar = document.getElementById("progress_bar");
+const status_upload = document.getElementById("status");
+const img_min = 10;
+const img_max = 30;
 var counts = 0;
 var index = 1;
+const step = 10;
 var count_max = 0;
 var countdown = 3;
 var jsonObj = {
   user_id: 5,
   list_base: {},
 }
-delall.hidden = true;
+
+reset_all();
+
+function reset_all(){
+  delall.disabled = true;
+  upload.disabled = true;
+  count_img.hidden = true;
+  jsonObj.list_base = {};
+  index = 1;
+  count_max = 0;
+  counts = 0;
+}
+
+function when_detect(status){
+  upload.disabled = status;
+  delall.disabled = status;
+  buttonRecord.disabled = status;
+  countdown = 3;
+}
 
 buttonRecord.onclick = function() {
-  count_max += 5;
+  count_max += step;
   video.hidden = false;
-  buttonRecord.disabled = true;
+  when_detect(true);
   anim();
 };
 
@@ -31,11 +55,9 @@ async function loadModels() {
   // startVideoStream();
 }
 
-// 3). startVideoStream() function definition
+// 3). startVideoStream
 function startVideoStream() {
-  // check if getUserMedia API is supported
   if (navigator.mediaDevices.getUserMedia) {
-    // get the webcam's video stream
     navigator.mediaDevices.getUserMedia({ video: true })
     .then(function(stream) {
       // set the video.srcObject to stream
@@ -43,59 +65,10 @@ function startVideoStream() {
     })
     .then(makePredictions)
     .catch(function(error) {
+      alert("Hãy nhấn cho phép sử dụng camera rồi thử  lại!");
       console.log(error);
     });
   }
-}
-
-
-// 4). makePredictions() function definition
-function makePredictions() {
-  const canvas = document.getElementById('canvas');
-  // resize the canvas to the #video dimensions
-  const displaySize = { width: video.width, height: video.height };
-  faceapi.matchDimensions(canvas, displaySize);
-  /* get "detections" for every 120 milliseconds */
-  const intervalId = setInterval(async function() {
-    /* this "detections" array has all the things like the "prediction results" as well as the "bounding box" configurations! */
-    const detections = await faceapi.detectAllFaces(video);
-    const resizedDetections = faceapi.resizeResults(detections, displaySize);
-      // before start drawing, clear the canvas
-    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-    if(countdown <= 0){
-      if (typeof detections[0] !== 'undefined'){
-        // use faceapi.draw to draw "detections"
-        faceapi.draw.drawDetections(canvas, resizedDetections);
-        if(detections[0].score > 0.95 && counts < count_max){
-          counts++;
-          count_img.innerHTML = "Đã chụp: " + counts;
-
-          const canvas2 = document.createElement("canvas");
-          canvas2.width = video.videoWidth;
-          canvas2.height = video.videoHeight;
-          canvas2.getContext('2d').drawImage(video, 0, 0, canvas2.width, canvas2.height);
-          const result = canvas2.toDataURL();
-          displayImage(result);
-        }else if(counts >= count_max){
-          canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-          buttonRecord.disabled = false;
-          countdown = 3;
-
-          //stop camera
-          stream = video.srcObject;
-          tracks = stream.getTracks();
-          tracks.forEach(function(track) {
-            track.stop();
-          });
-          video.srcObject = null;
-          clearInterval(intervalId);
-          video.hidden = true;
-          delall.hidden = false;
-          // console.log(jsonObj.list_base);
-        }
-      }
-    }
-  }, 120);
 }
 
 // activate the loadModels() function
@@ -113,18 +86,76 @@ function anim() {
   }
 }
 
-const displayImage = (img) => {
-  base64Img = img.replace("data:image/png;base64,", "");
-  id = "img"+index
-  jsonObj.list_base[id] = base64Img;
-  let html = `<div class="card img_clear" style="width: 10rem;" id="${id}">
-                <img class="card-img-top" src="${img}">
-                <div class="card-body">
-                  <button onclick="del_img('${id}')" class="btn btn-danger btn-sm">Xóa ${id}</button>
-                </div>
-              </div>`;
-  div.innerHTML += html;
+const canvas = document.getElementById('canvas_face');
+const canvas2 = document.createElement("canvas");
+// 4). makePredictions() function definition
+function makePredictions() {
+
+  // resize the canvas to the #video dimensions
+  const displaySize = { width: video.width, height: video.height };
+  faceapi.matchDimensions(canvas, displaySize);
+  count_img.hidden = false;
+
+  /* get "detections" for every 120 milliseconds */
+  const intervalId = setInterval(async function() {
+    try {
+      /* this "detections" array has all the things like the "prediction results" as well as the "bounding box" configurations! */
+      const detections = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options());
+      const resizedDetections = faceapi.resizeResults(detections, displaySize);
+
+      // before start drawing, clear the canvas
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      // use faceapi.draw to draw "detections"
+      faceapi.draw.drawDetections(canvas, resizedDetections);
+      if(detections._score > 0.95 && counts < count_max){
+        counts++;
+        count_img.innerHTML = "Đã chụp: " + counts;
+        add_listImg()
+      }else if(counts >= count_max){
+        video.hidden = true;
+        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        //stop camera
+        stream = video.srcObject;
+        tracks = stream.getTracks();
+        tracks.forEach(function(track) {
+          track.stop();
+        });
+        video.srcObject = null;
+        when_detect(false);
+        // console.log(jsonObj.list_base);
+        clearInterval(intervalId);
+        await displayImage();
+      }
+    } catch (error) {
+      // console.log(error);
+    }
+  }, 100);
+}
+
+function add_listImg(){
+  canvas2.width = video.videoWidth;
+  canvas2.height = video.videoHeight;
+  canvas2.getContext('2d').drawImage(video, 0, 0, canvas2.width, canvas2.height);
+  const img = canvas2.toDataURL();
+  id = "img" + index
+  jsonObj.list_base[id] = img;
   index++;
+}
+
+function displayImage(){
+  for (let key in jsonObj.list_base) {
+    load_id = document.getElementById(""+key);
+    if(!load_id){
+      let value = jsonObj.list_base[key];
+      let html = `<div class="card img_clear" style="width: 10rem;" id="${key}">
+                  <img class="card-img-top" src="${value}">
+                  <div class="card-body">
+                    <button onclick="del_img('${key}')" class="btn btn-danger btn-sm">Xóa ${key}</button>
+                  </div>
+                </div>`;
+      div.innerHTML += html;
+    }
+  }
 }
 
 function del_img(id){
@@ -132,7 +163,10 @@ function del_img(id){
     if (confirm('Xác nhận xóa')) {
       delete jsonObj.list_base[id];
       document.getElementById(id).remove();
-      // console.log(jsonObj.list_base);
+      var length_img = Object.keys(jsonObj.list_base).length;
+      if(length_img == 0){
+        reset_all();
+      }
     }
   }
 }
@@ -143,36 +177,52 @@ delall.onclick = function() {
     while(div.firstChild){
         div.removeChild(div.firstChild);
     }
-    jsonObj.list_base = {};
-    index = 1;
-    count_max = 0;
-    counts = 0;
-    count_img.hidden = true;
-    delall.hidden = true;
+    reset_all();
   }
 };
 
-var elStatus = document.getElementById('status');
 upload.onclick = function() {
   if (confirm('Upload tất cả hình ảnh?')) {
-    var lenth = Object.keys(jsonObj.list_base).length;
-    if(lenth >=5){
-      console.log("Leng: " + lenth);
-
+    var length_img = Object.keys(jsonObj.list_base).length;
+    if(length_img >= img_min && length_img <= img_max){
       axios.request({
         method: "post",
         url: "/submit_img",
         data: jsonObj,
-        uploadProgress: (evt) => {
-          console.log(evt.loaded / evt.total)
+        onUploadProgress: function(progressEvent) {
+          var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)+ "%"
+          when_upload(length_img, progressEvent.loaded, progressEvent.total);
+          progress.innerHTML = percentCompleted;
+          progress.style.width= percentCompleted;
         }
       }).then (data => {
-        console.log(data.status);
+        status_upload.innerHTML = "Đã tải lên thành công!";
+        // console.log(data.status);
       }).catch(e =>{
-        console.error("error")
+        upload_error();
       });
     }else{
-      alert("Tối thiểu 20 ảnh, chọn quét khuôn mặt để  bổ sung thêm!");
+      alert("Chọn tối thiểu "+ img_min +" ảnh, tối đa "+ img_max +" ảnh!");
     }
   }
 };
+
+function math_mb(value){
+  return Math.round(value/1024);
+}
+
+function when_upload(length_img, loading, finished){
+  upload.disabled = true;
+  delall.disabled = true;
+  buttonRecord.disabled = true;
+  progress_bar.hidden = false;
+  status_upload.innerHTML = "Đang tải lên "+ length_img +" ảnh, "+math_mb(loading)+"MB/"+math_mb(finished)+"MB";
+}
+
+function upload_error(){
+  upload.disabled = false;
+  delall.disabled = false;
+  buttonRecord.disabled = false;
+  progress_bar.hidden = true;
+  status_upload.innerHTML = "Đã có lỗi xảy ra, hãy kiểm tra và thực hiện lại!";
+}

@@ -12,18 +12,17 @@ import datetime
 import cv2
 import base64
 from jsonschema import validate, ValidationError, SchemaError
-# imutils-0.5.4, jsonschema, installed attrs-21.2.0 importlib-resources-5.4.0 jsonschema-4.2.1 pyrsistent-0.18.0
-
 import imutils
 # python3.7 -m pip install package
 # source venv/bin/activate
+# okteto stack deploy --build
 
-# sess = tf.Session()
-# graph = tf.get_default_graph()
+sess = tf.Session()
+graph = tf.get_default_graph()
 
-# with sess.as_default():
-#   with graph.as_default():
-#     face_recognition = Recognition('models', 'models/your_model.pkl')
+with sess.as_default():
+  with graph.as_default():
+    face_recognition = Recognition('models', 'models/your_model.pkl')
 
 app = Flask(__name__, static_folder='', static_url_path='')
 
@@ -77,18 +76,19 @@ def index_detect():
 							}
 	return {"data": False, "message": "Cannot detect"}
 #==========================================================
-@app.route('/vi')
-def show():
-	return render_template('show.html')
+@app.route('/face')
+@cross_origin(origin='*')
+def face():
+	return render_template('face.html')
 
-@app.route('/submit',methods=['POST'])
-def submit():
+@app.route('/submit_img', methods=['POST'])
+@cross_origin(origin='*')
+def submit_img():
 	data = request.json
-	print(data['image'])
 	schema = {
 			"type" : "object",
-			"properties": {"image": {"type" : "string"}, "user_id": {"type" : "number"}},
-			"required": ["image",  "user_id"]
+			"properties": {"user_id": {"type" : "number"}},
+			"required": ["list_base", "user_id"]
 	}
 
 	try:
@@ -97,31 +97,18 @@ def submit():
 			return {"data": False, "message": "Validate errors"}
 	except jsonschema.SchemaError as e:
 			return {"data": False, "message": "Validate errors"}
+	except:
+		return {"data": False, "message": "Validate errors"}
 
-	image = base64_image(data['image'])
-	if image is None:
-		print(image)
-		return {"data": False, "message": "Cannot load image"}
-	return {"data": True, "message": "Success!"}
-
-
-@app.route('/face')
-@cross_origin(origin='*')
-def face():
-	return render_template('face.html')
-
-@app.route('/submit_img', methods=['POST'])
-def submit_img():
-	data = request.json
 	print(True)
-	return {"data": True, "message": data}
+	print("Printed immediately.")
+	return {"data": True, "message": "ok"}
 
 
-# @app.route('/about')
-# def hello_world():
-# 	msg = 'Hello World!'
-# 	return msg
-#return jsonify(result="stopped")
+@app.route('/')
+def hello():
+	msg = 'Hello World!'
+	return msg
 
 # def attach():
 #   if os.environ.get('WERKZEUG_RUN_MAIN'):

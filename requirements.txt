@@ -44,3 +44,5 @@ typing-extensions==3.10.0.2
 Werkzeug==2.0.2
 wrapt==1.13.2
 zipp==3.6.0
+imutils==0.5.4
+jsonschema

@@ -1,5 +1,5 @@
 import pydevd_pycharm
-from flask import Flask, request, render_template, Response, jsonify
+from flask import Flask, request, render_template, Response, jsonify, redirect, url_for
 from flask_cors import CORS, cross_origin
 import os, logging
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -99,16 +99,24 @@ def submit_img():
 			return {"data": False, "message": "Validate errors"}
 	except:
 		return {"data": False, "message": "Validate errors"}
-
+	time.sleep(5)
 	print(True)
 	print("Printed immediately.")
 	return {"data": True, "message": "ok"}
 
 
-@app.route('/')
+@app.route('/login')
 def hello():
-	msg = 'Hello World!'
-	return msg
+	# msg = 'Hello World!'
+	# return msg
+	return render_template('index.html')
+
+@app.route('/submit_login', methods=['POST'])
+@cross_origin(origin='*')
+def submit_login():
+	data = request.json
+	print(data['access_token'])
+	return {"data": True, "message": "Saved token!"}
 
 # def attach():
 #   if os.environ.get('WERKZEUG_RUN_MAIN'):

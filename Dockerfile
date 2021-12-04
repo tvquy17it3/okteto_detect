@@ -11,6 +11,7 @@ RUN pip install -r requirements.txt
 COPY app.py app.py
 COPY face-api.min.js face-api.min.js
 COPY script.js script.js
+COPY snacc.js snacc.js
 COPY ./align align
 COPY ./facenet facenet
 COPY ./models models

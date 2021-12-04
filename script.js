@@ -197,6 +197,9 @@ upload.onclick = function() {
         }
       }).then (data => {
         status_upload.innerHTML = "Đã tải lên thành công!";
+        status_upload.style.color = "#155724";
+        status_upload.style.fontSize = "30px";
+        progress.hidden= true;
         // console.log(data.status);
       }).catch(e =>{
         upload_error();
@@ -207,8 +210,13 @@ upload.onclick = function() {
   }
 };
 
-function math_mb(value){
-  return Math.round(value/1024);
+
+function bytesToSize(bytes) {
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+  if (bytes === 0) return 'n/a'
+  const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10)
+  if (i === 0) return `${bytes} ${sizes[i]})`
+  return `${(bytes / (1024 ** i)).toFixed(1)} ${sizes[i]}`
 }
 
 function when_upload(length_img, loading, finished){
@@ -216,7 +224,7 @@ function when_upload(length_img, loading, finished){
   delall.disabled = true;
   buttonRecord.disabled = true;
   progress_bar.hidden = false;
-  status_upload.innerHTML = "Đang tải lên "+ length_img +" ảnh, "+math_mb(loading)+"MB/"+math_mb(finished)+"MB";
+  status_upload.innerHTML = "Đang tải lên "+ length_img +" ảnh, "+ bytesToSize(loading)+"/"+ bytesToSize(finished);
 }
 
 function upload_error(){

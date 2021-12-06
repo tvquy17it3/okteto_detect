@@ -17,10 +17,7 @@ var index = 1;
 const step = 10;
 var count_max = 0;
 var countdown = 3;
-var jsonObj = {
-  user_id: 5,
-  list_base: {},
-}
+var list_base = {};
 
 reset_all();
 
@@ -28,7 +25,7 @@ function reset_all(){
   delall.disabled = true;
   upload.disabled = true;
   count_img.hidden = true;
-  jsonObj.list_base = {};
+  list_base = {};
   index = 1;
   count_max = 0;
   counts = 0;
@@ -90,7 +87,6 @@ const canvas = document.getElementById('canvas_face');
 const canvas2 = document.createElement("canvas");
 // 4). makePredictions() function definition
 function makePredictions() {
-
   // resize the canvas to the #video dimensions
   const displaySize = { width: video.width, height: video.height };
   faceapi.matchDimensions(canvas, displaySize);
@@ -122,7 +118,6 @@ function makePredictions() {
         });
         video.srcObject = null;
         when_detect(false);
-        // console.log(jsonObj.list_base);
         clearInterval(intervalId);
         await displayImage();
       }
@@ -138,15 +133,15 @@ function add_listImg(){
   canvas2.getContext('2d').drawImage(video, 0, 0, canvas2.width, canvas2.height);
   const img = canvas2.toDataURL();
   id = "img" + index
-  jsonObj.list_base[id] = img;
+  list_base[id] = img;
   index++;
 }
 
 function displayImage(){
-  for (let key in jsonObj.list_base) {
+  for (let key in list_base) {
     load_id = document.getElementById(""+key);
     if(!load_id){
-      let value = jsonObj.list_base[key];
+      let value = list_base[key];
       let html = `<div class="card img_clear" style="width: 10rem;" id="${key}">
                   <img class="card-img-top" src="${value}">
                   <div class="card-body">
@@ -159,11 +154,11 @@ function displayImage(){
 }
 
 function del_img(id){
-  if(jsonObj.list_base[id] != null){
+  if(list_base[id] != null){
     if (confirm('Xác nhận xóa')) {
-      delete jsonObj.list_base[id];
+      delete list_base[id];
       document.getElementById(id).remove();
-      var length_img = Object.keys(jsonObj.list_base).length;
+      var length_img = Object.keys(list_base).length;
       if(length_img == 0){
         reset_all();
       }
@@ -183,12 +178,12 @@ delall.onclick = function() {
 
 upload.onclick = function() {
   if (confirm('Upload tất cả hình ảnh?')) {
-    var length_img = Object.keys(jsonObj.list_base).length;
+    var length_img = Object.keys(list_base).length;
     if(length_img >= img_min && length_img <= img_max){
       axios.request({
         method: "post",
         url: "/submit_img",
-        data: jsonObj,
+        data: {list_img64: list_base},
         onUploadProgress: function(progressEvent) {
           var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)+ "%"
           when_upload(length_img, progressEvent.loaded, progressEvent.total);
@@ -200,7 +195,6 @@ upload.onclick = function() {
         status_upload.style.color = "#155724";
         status_upload.style.fontSize = "30px";
         progress.hidden= true;
-        // console.log(data.status);
       }).catch(e =>{
         upload_error();
       });

@@ -40,16 +40,15 @@ def base64_image(base64_img):
         return None
     return base64_img
 
-def add_overlays(faces, user_id, confidence=0.5):
+def add_overlays(faces, confidence=0.5):
     if faces is not None:
         for idx, face in enumerate(faces):
             face_bb = face.bounding_box.astype(int)
             if face.name and face.prob:
                 if face.prob > confidence:
-                    if user_id == face.name:
-                        conf = '{:.02f}'.format(face.prob * 100)
-                        return True, conf
-    return False, 0
+                    conf = '{:.02f}'.format(face.prob * 100)
+                    return True, face.name, conf
+    return False, 0, 0
 
 def errorRemoveReadonly(func, path, exc):
     excvalue = exc[1]
@@ -74,19 +73,17 @@ def index_detect():
         with sess.as_default():
             with graph.as_default():
                 faces = face_recognition.identify(image)
-                user_id = str(data['user_id'])
-                check_confidence, conf = add_overlays(faces, user_id)
-                if check_confidence:
-                    time_now = time.time()
-                    date_time = datetime.datetime.fromtimestamp(time_now).strftime('%d-%m-%Y %H:%M:%S')
+                status, emp_id, conf = add_overlays(faces)
+                if status:
                     return {
                             "data": True,
-                            "conf": conf,
-                            "date_time": str(date_time),
-                            "user_id": user_id,
-                            }
+                            "confidence": conf,
+                            "detected_id": emp_id,
+                            "message": "Success"
+                        }
     return {"data": False, "message": "Cannot detect"}
-#==========================================================
+
+#==========================MANAGER FACE================================
 @app.route('/face')
 def face():
     if 'access_token' not in session:
@@ -97,12 +94,14 @@ def face():
 def submit_img():
     if 'access_token' not in session:
         return redirect(url_for('login'))
+    if 'employee_id' not in session:
+        return redirect(url_for('login'))
 
     data = request.json
     if 'list_img64' not in data:
         return {"data": False, "message": "Validate errors!"}
 
-    Id = 'ms5'
+    Id = str(session['employee_id'])
     path = 'your_face/'+ Id
     shutil.rmtree(path, ignore_errors=False, onerror=errorRemoveReadonly)
     if not os.path.exists(path):
@@ -116,6 +115,24 @@ def submit_img():
     # print(os.listdir(path))
     return {"data": True, "message": os.listdir(path)}
 
+
+@app.route('/show')
+def show_face():
+    if 'access_token' not in session:
+        return redirect(url_for('login'))
+    if 'employee_id' not in session:
+        return redirect(url_for('login'))
+
+    Id = str(session['employee_id'])
+    path = 'your_face/'+ Id
+    if not os.path.exists(path):
+        return render_template('show.html', images = [], path = "")
+
+    images = os.listdir(path)
+    return render_template('show.html', images = images, path = path)
+
+
+#=====================ACCOUNT======================
 @app.route('/login')
 def login():
     if 'access_token' in session:
@@ -127,14 +144,21 @@ def submit_login():
     data = request.json
     if 'access_token' not in data:
         return {"data": False, "message": "Not token!"}
+    if 'employee_id' not in data:
+        return {"data": False, "message": "Chưa tạo hồ sơ!"}
+
     session['access_token'] = data['access_token']
+    session['employee_id'] = data['employee_id']
     return {"data": True, "message": "Saved token!"}
 
 @app.route('/logout')
 def logout():
     if 'access_token' in session:
         session.pop('access_token', None)
+    if 'employee_id' in session:
+        session.pop('employee_id', None)
     return redirect(url_for('login'))
+#===========================================
 
 if __name__ == '__main__':
     print('Starting server...')

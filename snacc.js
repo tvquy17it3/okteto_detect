@@ -18,9 +18,9 @@ async function login(){
       });
       const json = await response.json();
       if(json.status_code == 200){
-        save(json.access_token)
+        save(json.access_token, json.employee_id);
       }else{
-        notice = "Sai email hoặc mật khẩu!";
+        notice = json.message;
       }
     } catch (error) {
       console.log(error);
@@ -31,13 +31,17 @@ async function login(){
   status_login.innerHTML = notice;
 }
 
-async function save(access_token){
+async function save(access_token, employee_id){
   await axios.post("/submit_login", {
-    access_token: access_token
+    access_token: access_token,
+    employee_id: employee_id,
   })
-  .then(function (response) {
-    status_login.innerHTML = "Đăng nhập thành công";
-    window.location.href = "/face";
+  .then(function (res) {
+    if(res.data){
+      window.location.href = "/face";
+      status_login.innerHTML = "Đăng nhập thành công";
+    }
+    status_login.innerHTML = "Không tìm thấy mã nhân viên!";
   })
   .catch(function (error) {
     console.log(error);

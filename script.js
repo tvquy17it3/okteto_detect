@@ -20,6 +20,9 @@ var countdown = 3;
 var list_base = {};
 
 reset_all();
+// activate the loadModels() function
+loadModels()
+
 
 function reset_all(){
   delall.disabled = true;
@@ -47,8 +50,11 @@ buttonRecord.onclick = function() {
 
 // 2). load the models
 async function loadModels() {
+  buttonRecord.disabled = true;
   /* ssdMobilenetv1 - for face detection */
-  await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
+  const load_modelv1 = await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
+  console.log("Load success!");
+  buttonRecord.disabled = false;
   // startVideoStream();
 }
 
@@ -67,9 +73,6 @@ function startVideoStream() {
     });
   }
 }
-
-// activate the loadModels() function
-loadModels()
 
 function anim() {
   if (countdown > 0) {
@@ -195,6 +198,7 @@ upload.onclick = function() {
         status_upload.style.color = "#155724";
         status_upload.style.fontSize = "30px";
         progress.hidden= true;
+        buttonRecord.disabled = false;
       }).catch(e =>{
         upload_error();
       });

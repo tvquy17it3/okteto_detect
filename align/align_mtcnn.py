@@ -65,7 +65,9 @@ def align_mtcnn(input_dir,
         os.makedirs(output_dir)
     # Store some git revision info in a text file in the log directory
     src_path, _ = os.path.split(os.path.realpath(__file__))
-    store_revision_info(src_path, output_dir, ' '.join(sys.argv))
+    #store_revision_info(src_path, output_dir, ' '.join(sys.argv))
+
+    #GIT========================================================================
     dataset = get_dataset(input_dir)
 
     print('Creating networks and loading parameters')
@@ -99,7 +101,7 @@ def align_mtcnn(input_dir,
                 nrof_images_total += 1
                 filename = os.path.splitext(os.path.split(image_path)[1])[0]
                 output_filename = os.path.join(output_class_dir, filename + '.png')
-                print(image_path)
+                # print(image_path)
                 if not os.path.exists(output_filename):
                     try:
                         img = misc.imread(image_path)

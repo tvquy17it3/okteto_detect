@@ -19,6 +19,7 @@ COPY ./models models
 COPY ./static static
 COPY ./templates templates
 COPY ./your_face your_face
+COPY ./face_align face_align
 
 EXPOSE 5000
 CMD ["python3", "app.py"]

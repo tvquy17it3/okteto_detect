@@ -2,6 +2,9 @@ name: okteto-detect
 autocreate: true
 image: okteto/python:3
 command: bash
+environment:
+  - ENV=dev
+workdir: /okteto
 volumes:
 - /root/.cache/pip
 sync:
@@ -10,3 +13,5 @@ forward:
 - 5000:5000
 reverse:
 - 9000:9000
+
+#https://github.com/okteto/python-openfaas

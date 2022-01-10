@@ -139,6 +139,23 @@ def show_face():
     return render_template('show.html', images = images, path = path)
 
 
+@app.route('/face_align')
+def show_face_align():
+    if 'access_token' not in session:
+        return redirect(url_for('login'))
+    if 'employee_id' not in session:
+        return redirect(url_for('login'))
+
+    Id = str(session['employee_id'])
+    path = 'face_align/'+ Id
+    if not os.path.exists(path):
+        return render_template('show.html', images = [], path = "")
+
+    images = os.listdir(path)
+    return render_template('show.html', images = images, path = path)
+
+
+
 #=====================ACCOUNT======================
 @app.route('/login')
 def login():
@@ -174,7 +191,7 @@ def training():
         path = 'face_align'
         if not os.path.exists(path):
             os.makedirs(path)
-        shutil.rmtree('face_align', ignore_errors=False, onerror=errorRemoveReadonly)
+        # shutil.rmtree('face_align', ignore_errors=False, onerror=errorRemoveReadonly)
         align_mtcnn('your_face', 'face_align')
         train('face_align/', 'models/20180402-114759.pb', 'models/your_model.pkl')
     except:
@@ -185,8 +202,8 @@ def training():
     return {"data": True,
             "message": "Đã train thành công!",
             'path_face_align': path_face_align,
-            'path_your_face': path_your_face
-            }
+            'path_your_face': path_your_face,
+        }
 
 if __name__ == '__main__':
     print('Starting server...')

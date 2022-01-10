@@ -10,8 +10,8 @@ const delall = document.getElementById("btn_delall");
 const progress = document.getElementById("progress_line");
 const progress_bar = document.getElementById("progress_bar");
 const status_upload = document.getElementById("status");
-const img_min = 10;
-const img_max = 30;
+const img_min = 20;
+const img_max = 50;
 var counts = 0;
 var index = 1;
 const step = 10;
@@ -50,12 +50,19 @@ buttonRecord.onclick = function() {
 
 // 2). load the models
 async function loadModels() {
-  buttonRecord.disabled = true;
-  /* ssdMobilenetv1 - for face detection */
-  const load_modelv1 = await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
-  console.log("Load success!");
-  buttonRecord.disabled = false;
-  // startVideoStream();
+  try {
+    loading.hidden = false;
+    buttonRecord.disabled = true;
+    /* ssdMobilenetv1 - for face detection */
+    const load_modelv1 = await faceapi.nets.ssdMobilenetv1.loadFromUri('./models');
+    console.log("Load success!");
+    buttonRecord.disabled = false;
+    loading.hidden = true;
+    // startVideoStream();
+  } catch (error) {
+    loading.hidden = true;
+    console.log(error);
+  }
 }
 
 // 3). startVideoStream
@@ -106,7 +113,7 @@ function makePredictions() {
       canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
       // use faceapi.draw to draw "detections"
       faceapi.draw.drawDetections(canvas, resizedDetections);
-      if(detections._score > 0.95 && counts < count_max){
+      if(detections._score > 0.98 && counts < count_max){
         counts++;
         count_img.innerHTML = "Đã chụp: " + counts;
         add_listImg()

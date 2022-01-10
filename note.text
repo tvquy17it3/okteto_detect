@@ -5,3 +5,5 @@ $ export PYTHONPATH=$PWD
 pip install -r requirements.txt
 
 $ okteto stack deploy --build
+
+#https://stackoverflow.com/questions/59221434/creating-a-persistentvolume-on-okteto-cloud
